@@ -4,3 +4,4 @@ __pycache__
 .env
 .*~
 datastax_bundle.zip
+.DS_Store
