@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import html
+from database import get_session
 
 class Summoner:
     def __init__(self, summoner_name: str):
