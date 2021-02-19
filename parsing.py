@@ -3,6 +3,7 @@ from bs4 import BeautifulSoup
 import re
 import html
 from database import get_session
+import uuid
 
 class Summoner:
     def __init__(self, summoner_name: str):
@@ -60,7 +61,7 @@ class Player:
 class Match:
     def __init__(self):
         self.teams = []
-        self.match_id = None
+        self.match_id = str(uuid.uuid4())
 
     def add_team(self, team):
         self.teams.append(team)
