@@ -46,5 +46,5 @@ def persist_csv_to_db(filename):
                 ) VALUES (%s, %s, %s, %s, %s, %s, %s)
             """, row.values())
 
-# test()
-persist_csv_to_db("test.csv")
+test()
+# persist_csv_to_db("test.csv")
