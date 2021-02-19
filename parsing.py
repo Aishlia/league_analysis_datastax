@@ -50,6 +50,7 @@ class Player:
     def __init__(self, champion: str, summoner: Summoner):
         self.champion = champion
         self.summoner = summoner
+        self.win = False
 
     def __str__(self):
         output = f"{self.champion} {self.summoner}"
@@ -62,6 +63,9 @@ class Player:
         }
         return player
 
+    def winloss(self, win_bool):
+        self.win = win_bool
+
 class Match:
     def __init__(self, match_id):
         self.teams = []
@@ -73,6 +77,22 @@ class Match:
     def print_team(self, team_num):
         for i in self.teams[team_num]:
             print(i)
+
+    def winloss(self, summoner_id: str, win: bool):
+        team_num = 1
+        for player in self.teams[0]:
+            if player.summoner.summoner_id == summoner_id:
+                team_num = 0
+                break
+
+        for player in self.teams[team_num]:
+            player.win = win
+            print(player.win)
+
+        other_team = team_num ^ 1
+        for player in self.teams[other_team]:
+            player.win = not win
+            print(player.win)
 
     def to_dict(self) -> dict:
         match = {
@@ -130,32 +150,40 @@ def get_match_ids(page_info):
     match_ids = [a['data-game-id'] for a in games]
     return match_ids
 
+def get_win_loss(page_info):
+    game_area = page_info.find("div", {"class": "GameItemList"})
+    games = game_area.find_all("div", {"class": "GameItem"})
+    winlosses = [a['data-game-result'] for a in games]
+    win = lambda x : True if (x == 'win') else False
+    winlosses = list(map(win, winlosses))
+    return winlosses
+
 def persist_matches(matches: Match):
     for match in matches:
         match_id = match.match_id
         for team in match.teams:
             for player in team:
-                record_id = str(uuid.uuid4())
                 player_data = dict(
-                    record_id = record_id,
                     match_id = match_id,
                     summoner_id = player.summoner.summoner_id,
                     name = player.summoner.name,
                     rank = str(player.summoner.rank),
                     champion = player.champion,
+                    win = str(player.win),
                     url = player.summoner.url,
                 )
                 print(player_data)
                 session.execute("""
                     INSERT INTO match (
-                        id,
                         match_id,
                         summoner_id,
                         name,
                         rank,
                         champion,
+                        win,
                         url
                     ) VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    IF NOT EXISTS
                 """, player_data.values())
 
 def two_matches(summoner_name: str):
@@ -169,6 +197,10 @@ def two_matches(summoner_name: str):
     match_ids = get_match_ids(page_info)
     matches = []
 
+    summoner_id = summ_id(summoner_name)
+    win_losses = get_win_loss(page_info)
+    print(win_losses)
+
     itr = 0
     for m in range(2):  # Pull 2 matches
         match_id = match_ids[m]
@@ -178,6 +210,7 @@ def two_matches(summoner_name: str):
             match.add_team(team)
             itr += 1
 
+        match.winloss(summoner_id, win_losses[m])
         matches.append(match)
 
     persist_matches(matches)
@@ -185,10 +218,10 @@ def two_matches(summoner_name: str):
 
 def get_matches(iters: int, seed_summoner: str):
     seed = two_matches(seed_summoner)
-    # for i in range(iters):
-    #     next_summoner = seed[1].teams[1][random.randint(0, 4)].summoner.name  # Pull a random player from the game as new seed
-    #     print(next_summoner)
-    #     seed = two_matches(next_summoner)
+    for _ in range(iters):
+        next_summoner = seed[1].teams[1][random.randint(0, 4)].summoner.name  # Pull a random player from the game as new seed
+        print(next_summoner)
+        seed = two_matches(next_summoner)
 
 if __name__ == "__main__":
     iters = int(input("Iterations: "))

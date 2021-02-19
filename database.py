@@ -30,4 +30,4 @@ def init_db(session):
     # session.execute(("CREATE KEYSPACE IF NOT EXISTS matches "
     #                 "WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1' }"))
     session.execute("USE match")
-    session.execute("CREATE TABLE IF NOT EXISTS match (id text, match_id text, summoner_id text, name text, rank text, champion text, url text, PRIMARY KEY (id))")
+    session.execute("CREATE TABLE IF NOT EXISTS match (match_id text, summoner_id text, name text, rank text, champion text, win text, url text, PRIMARY KEY (match_id, summoner_id))")
